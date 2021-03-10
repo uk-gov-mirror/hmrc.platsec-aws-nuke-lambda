@@ -1,0 +1,308 @@
+regions:
+- eu-west-2
+- global
+
+account-blocklist:
+- "324599906584" # platsec-production-account
+
+accounts:
+  "304923144821": # platsec-sandbox-account
+    presets:
+      - sandbox
+      - default
+      - terraform
+
+resource-types:
+  excludes:
+    - FMSPolicy
+    - FMSNotificationChannel
+    - GlobalAcceleratorEndpointGroup
+    - GlobalAccelerator
+    - GlobalAcceleratorListener
+    - GlueConnection
+    - ResourceGroupGroup
+    - RoboMakerDeploymentJob
+    - RoboMakerFleet
+    - RoboMakerRobot
+    - RoboMakerRobotApplication
+    - RoboMakerSimulationApplication
+    - RoboMakerSimulationJob
+    - MobileProject
+    - MediaLiveChannel
+    - MediaLiveInput
+    - MediaLiveInputSecurityGroup
+    - WorkLinkFleet
+    - WorkSpacesWorkspace
+    - ServiceCatalogTagOption
+    - ServiceCatalogTagOptionPortfolioAttachment
+
+presets:
+  sandbox:
+    filters:
+      S3Bucket: 
+      - type: exact
+        value: "s3://platsec-tf-state-sandbox-93bc63e0b4f48fbbff568d9fc0dc3def"
+      DynamoDBTable:
+      - "platsec-tf-lock-sandbox-93bc63e0b4f48fbbff568d9fc0dc3def"
+      DynamoDBTableItem:
+      - property: Table
+        value: platsec-tf-lock-sandbox-93bc63e0b4f48fbbff568d9fc0dc3def
+      CodeBuildProject:
+      - type: exact
+        value: terraform-sandbox-automation
+      OpsWorksUserProfile:
+      - type: regex
+        value: "^arn:aws:sts::304923144821:assumed-role/RoleSandboxAccess/.*"
+      S3Object:
+      - property: Bucket
+        value: "platsec-tf-state-sandbox-93bc63e0b4f48fbbff568d9fc0dc3def"
+      IAMVirtualMFADevice:
+      - arn:aws:iam::304923144821:mfa/root-account-mfa-device
+      IAMRole:
+      - "RoleSandboxAccess"
+      IAMRolePolicyAttachment:
+      - property: RoleName
+        value: RoleSandboxAccess
+  default:
+    filters:
+      IAMRole:
+      - "OrganizationAccountAccessRole"
+      - "RoleCAEncryption"
+      - "RoleChangeSetCreator"
+      - "RoleCrossAccountSSH"
+      - "RoleIAMAdministrator"
+      - "RoleIAMReadOnly"
+      - "RolePlatformOwner"
+      - "RoleSecurityReadOnly"
+      - "RoleSecurityAdministrator"
+      - "RoleTerraformProvisioner"
+      IAMRolePolicy:
+      - property: role:RoleName
+        value: OrganizationAccountAccessRole
+      - property: role:RoleName
+        value: RoleChangeSetCreator
+      IAMPolicy:
+      - type: glob
+        value: "arn:aws:iam::*:policy/Roles-PolicyIAMAdministrator-*"
+      - type: glob
+        value: "arn:aws:iam::*:policy/PolicyTerraformProvisioner"
+      - type: glob
+        value: "arn:aws:iam::*:policy/PolicySandboxAccess"
+      - type: glob
+        value: "arn:aws:iam::*:policy/Roles-PolicySecurityReadOnly-*"
+      - type: glob
+        value: "arn:aws:iam::*:policy/Roles-PolicySecurityAdministrator-*"
+      - type: glob
+        value: "arn:aws:iam::*:policy/ManagedPolicyEngineeringBoundary"
+      - type: glob
+        value: "arn:aws:iam::*:policy/Roles-PolicyPlatformOwner-*"
+      - type: glob
+        value: "arn:aws:iam::*:policy/Roles-PolicyIAMReadOnly-*"
+      - type: glob
+        value: "arn:aws:iam::*:policy/Roles-PolicyDenyTrustedAdvisor-*"
+      IAMRolePolicyAttachment:
+      - property: RoleName
+        value: RoleSecurityReadOnly
+      - property: RoleName
+        value: RolePlatformOwner
+      - property: RoleName
+        value: RoleTerraformProvisioner
+      - property: RoleName
+        value: RoleIAMAdministrator
+      - property: RoleName
+        value: RoleIAMReadOnly
+      - property: RoleName
+        value: RoleSecurityAdministrator
+      SSMParameter:
+      - "/cloudtrail_account/account_id"
+      - "/service_accounts/github_api_token"
+      - "/service_accounts/github_api_user"
+      - "/web_ops_users/aws/account_id"
+      CloudTrailTrail:
+      - type: glob
+        value: "Cloudtrail-Cloudtrail-*"
+      EC2NetworkInterface:
+      - property: Status
+        value: "in-use"
+      EC2InternetGateway:
+      - property: "tag:allow_delete"
+        value: "false"
+      CloudFormationStack:
+      - Cloudtrail
+      - Roles
+      S3Bucket:
+      - type: glob
+        value: "s3://cf-templates-*"
+      CloudWatchLogsLogGroup:
+      - CloudTrail/DefaultLogGroup
+  terraform:
+    filters:
+      EC2RouteTable:
+      - property: tag:allow_delete
+        value: "false"
+      EC2DHCPOption:
+      - property: tag:allow_delete
+        value: "false"
+      EC2Subnet:
+      - property: tag:Name
+        type: regex
+        value: "^(private|public)_subnet_eu-west-2.$"
+      EC2NATGateway:
+      - property: tag:Name
+        type: regex
+        value: "^nat_gateway_az_eu-west-2.$"
+      EC2SecurityGroup:
+      - property: Name
+        type: regex
+        value: 
+      EC2VPCEndpoint:
+      - property: tag:Name
+        value: security_management
+      EC2Address:
+      - property: tag:Name
+        type: regex
+        value: "^elastic_ip_az_eu-west-2.$"
+      ECRRepository:
+      - "Repository: deployment_tools"
+      - "Repository: platsec-prowler"
+      CloudWatchAlarm:
+      - "platsec_cloudtrail_monitoring_lambda_failure_alarm"
+      - "platsec_guard_duty_monitoring_lambda_failure_alarm"
+      KMSKey:
+      - type: glob
+        value: "*"
+      IAMRole:
+      - property: tag:allow_delete
+        value: "false"
+      IAMRolePolicy:
+      - property: tag:allow_delete
+        value: "false"
+      - property: role:RoleName
+        value: cloudtrail-cloudwatch-logs
+      - property: role:RoleName
+        value: cloudtrail_sns_delivery_status
+      - property: role:RoleName
+        value: docker_image_service_role
+      - property: role:RoleName
+        value: platsec_cloudtrail_monitoring_lambda
+      IAMPolicy:
+      - property: Name
+        value: github_scanner_ssm_policy
+      - property: Name
+        value: prowler-lambda-output-policy
+      - property: Name
+        value: cloudtrail_monitoring_config_get
+      - property: Name
+        value: prowler-lambda-policy
+      - property: Name
+        value: guard_duty_monitoring_ssm_policy
+      - property: Name
+        value: docker_image_ssm_policy
+      - property: Name
+        value: mongo_auth_codepipeline_alerts_ssm_policy
+      - property: Name
+        value: cross_account_ssh_describe_tags
+      - property: Name
+        value: vpc_flow_log_policy
+      - property: Name
+        value: platsec_cloudtrail_monitoring_failure_alarm
+      - property: Name
+        value: platsec_cloudtrail_monitoring_ssm_policy
+      - property: Name
+        value: cloudtrail_alert_config_put_policy
+      S3Bucket:
+      - property: tag:allow_delete
+        value: "false"
+      EC2VPC:
+      - property: "tag:Name"
+        value: security_management
+      EC2InternetGatewayAttachment:
+      - property: "tag:vpc:Name"
+        value: security_management
+      KMSAlias:
+      - alias/cloudtrail_monitoring
+      - alias/external_github_credentials
+      - alias/github_service_account_credentials
+      - alias/guard_duty_config
+      - alias/platsec_alerts_slack_credentials
+      - alias/slack_credentials
+      - alias/tf_remote_state_key
+      - type: glob
+        value: "alias/docker_image_*_code_build_artefact"
+      SNSSubscription:
+      - type: contains
+        value: cloudtrail_platsec_topic
+      SNSTopic:
+      - type: glob
+        value: "TopicARN: arn:aws:sns:eu-west-2:*:cloudtrail_platsec_topic"
+      - type: glob
+        value: "TopicARN: arn:aws:sns:eu-west-2:*:platsec_*_lambda_failure_topic_*"
+      CloudWatchEventsRule:
+      - "Rule: code_pipeline_failure_notification_via_lambda"
+      - "Rule: guard_duty_monitoring"
+      - "Rule: run_docker_image_weekly"
+      - "Rule: run_github_scanner_every_day"
+      - "Rule: run_prowler_scanner_every_day"
+      CloudWatchEventsTarget:
+      - "Rule: code_pipeline_failure_notification_via_lambda Target ID: SendToLambda"
+      - "Rule: guard_duty_monitoring Target ID: guard_duty_monitoring"
+      - "Rule: run_docker_image_weekly Target ID: Vanilla_Docker_Image_CodeBuild_Jobs"
+      - "Rule: run_github_scanner_every_day Target ID: github_scanner"
+      - "Rule: run_prowler_scanner_every_day Target ID: prowler_runner"
+      CloudWatchLogsLogGroup:
+      - /aws/codebuild/docker_image
+      - /aws/codebuild/terraform-sandbox-automation
+      - /aws/lambda/github_scanner
+      - /aws/lambda/platsec_cloudtrail_monitoring
+      - /vpc/flow_log
+      - /aws/lambda/prowler_runner
+      - /aws/lambda/prowler_scanner
+      - /aws/lambda/guard_duty_monitoring
+      - type: glob
+        value: "sns/eu-west-2/*/cloudtrail_platsec_topic"
+      IAMRolePolicyAttachment:
+      - property: RoleName
+        value: platsec_cloudtrail_monitoring_lambda
+      - property: RoleName
+        value: cloudtrail_alert_config
+      - property: RoleName
+        value: cross_account_packer_role
+      - property: RoleName
+        value: vault_policy_applier_lambda_role
+      - property: RoleName
+        value: docker_image_service_role
+      - property: RoleName
+        value: github_scanner_lambda
+      - property: RoleName
+        value: guard_duty_monitoring_lambda
+      - property: RoleName
+        value: prowler_runner_lambda
+      - property: RoleName
+        value: prowler_scanner_lambda
+      - property: RoleName
+        value: mongo_auth_codepipeline_alerts_lambda
+      - property: RoleName
+        value: vpc_flow_log_role
+      IAMInstanceProfile:
+      - "Packer"
+      IAMInstanceProfileRole:
+      - "Packer -> cross_account_packer_role"
+      CodeBuildProject:
+      - docker_image
+      LambdaFunction:
+      - property: tag:allow_delete
+        value: "false"
+      S3Object:
+      - property: Bucket
+        type: glob
+        value: "platsec-deployment-artifacts-*-*"
+      - property: Bucket
+        type: glob
+        value: "cf-templates-*-eu-west-2"
+      SQSQueue:
+      - type: glob
+        value: "https://sqs.eu-west-2.amazonaws.com/*/prowler_scanner_queue*"
+      LambdaEventSourceMapping:
+      - property: EventSourceArn
+        type: glob
+        value: "arn:aws:sqs:eu-west-2:*:prowler_scanner_queue"
