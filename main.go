@@ -4,49 +4,28 @@ import (
 	"fmt"
 	"github.com/aws/aws-lambda-go/lambda"
 	"log"
-	"os"
+	"github.com/spf13/afero"
+        "os"
 	"os/exec"
 )
 
-type MyEvent struct {
-	ConfigFilename string `json:"ConfigFilename"`
-	Profile        string `json:"Profile"`
+type nukeInterface interface {
+        fileExists()            bool
+        nuke()                  bool
 }
 
-type MyResponse struct {
-	Message string `json:"Answers"`
+type nukeObject struct {
+        filepath        string
+        dryrun          bool
 }
 
-func HandleLambdaEvent(event MyEvent) (MyResponse, error) {
-	configPath := "/configs/" + event.ConfigFilename
-	fileExists := fileExists(configPath)
-	// validateProfile(event.Profile)
-
-	nuke(configPath)
-
-	return MyResponse{Message: fmt.Sprintf("ConfigFilename is %s and Profile is %s Does file exist? %t", event.ConfigFilename, event.Profile, fileExists)}, nil
+func (no nukeObject) fileExists() bool {
+        filesystem := afero.NewOsFs()
+	return fileExistsOnFilesystem(no.filepath, filesystem)
 }
 
-func fileExists(filename string) bool {
-	if _, err := os.Stat(filename); os.IsNotExist(err) {
-		log.Fatalf("File %s in /configs does not exist", filename)
-		return false
-	}
-	log.Printf("File %s is found", filename)
-	return true
-}
-
-func validateProfile(profile string) bool {
-	if profile == "" {
-		log.Fatalf("Profile is not set")
-		return false
-	}
-	log.Printf("Profile %s is found", profile)
-	return true
-}
-
-func nuke(path string) {
-        args := []string{"--quiet", "--force", "--force-sleep", "3", "--config", path}
+func (no nukeObject) nuke() bool {
+        args := []string{"--quiet", "--force", "--force-sleep", "3", "--config", no.filepath}
 	// args = append(args, "--std=c++11")
 	
 	cmd := exec.Command("aws-nuke", args...)
@@ -54,12 +33,71 @@ func nuke(path string) {
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		fmt.Println(fmt.Sprint(err) + ": " + string(output))
-		return
+		return false
 	}
 	fmt.Println(string(output))
 	fmt.Printf("Output was %s", output)
+        return true
 }
 
+func fileExistsOnFilesystem(filepath string, filesystem afero.Fs) bool {
+	if _, err := filesystem.Stat(filepath); os.IsNotExist(err) {
+                log.Printf("File %s does not exist", filepath)
+		return false
+	}
+        log.Printf("File %s is found", filepath)
+	return true
+}
+
+func validateDryRun(dryrun string) bool {
+	if dryrun == "false" {
+		log.Printf("DryRun is off, so nuke for real")
+		return false
+	}
+	log.Print("DryRun is on")
+	return true
+}
+
+type MyEvent struct {
+	ConfigFilename string `json:"ConfigFilename"`
+	DryRun         string `json:"DryRun"`
+}
+
+type MyResponse struct {
+	Message string `json:"Answers"`
+}
+
+func performNuke(ni nukeInterface) bool {
+        if ni.fileExists() {
+                return ni.nuke()
+        }
+	return false
+        	
+}
+
+var callPerformNuke = performNuke
+
+func (no *nukeObject) HandleLambdaEvent(event MyEvent) (MyResponse, error) {
+        dryrun := validateDryRun(event.DryRun)
+        no.filepath = "/configs/" + event.ConfigFilename
+        no.dryrun = dryrun
+        //no := nukeObject{filepath: "/configs/" + event.ConfigFilename, dryrun: dryrun}
+        nukeSuccess := "failed"
+	if callPerformNuke(no) { 
+                nukeSuccess = "was successful" 
+        }
+
+        return MyResponse{Message: fmt.Sprintf("ConfigFilename is %s and DryRun is %v, the nuke %s", event.ConfigFilename, event.DryRun, nukeSuccess)}, nil
+}
+
+
+
 func main() {
-	lambda.Start(HandleLambdaEvent)
+
+        no := nukeObject{
+                filepath: "",
+                dryrun: true,
+        }
+
+	lambda.Start(no.HandleLambdaEvent)
 }

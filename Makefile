@@ -10,8 +10,6 @@ clean: build-image
 	docker kill $(DOCKER_LIST)
 	docker rm $(DOCKER_LIST)
 
-	#curl -XPOST "http://localhost:9000/2015-03-31/functions/function/invocations" -d '{"Name": "marti", "Age": 23}'
-
 .PHONY: run
 test_run:
 	docker run -d -it -v ~/.aws-lambda-rie:/aws-lambda --entrypoint /aws-lambda/aws-lambda-rie  -p 9000:8080 --name go-nuke go-nuke:latest /main
@@ -22,6 +20,11 @@ clean-build-run: clean test_run
 .PHONY: test
 test: test_format
 	go test -cover
+
+.PHONY: show_test_cover
+show_test_cover: 
+	go test -coverprofile /tmp/cover.out
+	go tool cover -html=/tmp/cover.out
 
 format:
 	gofmt -s -w $(GOFILES)
