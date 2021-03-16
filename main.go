@@ -10,11 +10,10 @@ import (
 	"github.com/aws/aws-lambda-go/lambda"
 )
 
-type nukeInterface interface {
+type Nuker interface {
 	fileExists() bool
 	nuke() bool
 }
-
 type nukeObject struct {
 	filepath string
 	dryrun   bool
@@ -74,7 +73,7 @@ func HandleLambdaEvent(event MyEvent) (MyResponse, error) {
 	return MyResponse{Message: fmt.Sprintf("ConfigFilename is %s and DryRun is %v, the nuke ran", event.ConfigFilename, event.DryRun)}, nil
 }
 
-func run(nuker nukeObject) error {
+func run(nuker Nuker) error {
 	if nuker.fileExists() {
 		if nuker.nuke() {
 			return nil

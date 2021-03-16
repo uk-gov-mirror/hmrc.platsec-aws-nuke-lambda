@@ -7,21 +7,19 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 )
 
-type MyMockedNukeObject struct {
-	mock.Mock
+type MockNuke struct {
+	filepath string
+	dryrun   bool
 }
 
-func (m *MyMockedNukeObject) fileExists() bool {
-	args := m.Called()
-	return args.Bool(0)
+func (m MockNuke) fileExists() bool {
+	return true
 }
 
-func (m *MyMockedNukeObject) nuke() bool {
-	args := m.Called()
-	return args.Bool(0)
+func (m MockNuke) nuke() bool {
+	return true
 }
 
 func TestMain(m *testing.M) {
@@ -151,10 +149,15 @@ func Test_run(t *testing.T) {
 	tmpfile, _ := ioutil.TempFile("/tmp", "meh")
 	defer os.Remove(tmpfile.Name())
 
-	testObj := new(MyMockedNukeObject)
+	// testObj := new(MyMockedNukeObject)
+	// testObj.On("fileExists").Return(true)
+	// testObj.On("nuke").Return(true)
+
+	// mockNukeObject := nukeObject{}
+	// mockNukeObject
 
 	type args struct {
-		nuker nukeObject
+		nuker Nuker
 	}
 	tests := []struct {
 		name    string
@@ -164,11 +167,11 @@ func Test_run(t *testing.T) {
 	}{
 		{name: "FileNotFoundCheck", args: args{}, wantErr: true, errMsg: "File not found"},
 		{name: "FileFound", args: args{nuker: nukeObject{filepath: "/tmp/meh"}}, wantErr: true, errMsg: ""},
-		{name: "NukeSuccess", args: args{nuker: testObj}, wantErr: true, errMsg: ""},
+		{name: "NukeSuccess", args: args{nuker: MockNuke{}}, wantErr: true, errMsg: ""},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := run(tt.args.nuker)
+			err := run(MockNuke{})
 			if (err != nil) != tt.wantErr {
 				t.Errorf("run() error = %v, wantErr %v", err, tt.wantErr)
 			}
