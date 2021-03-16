@@ -5,58 +5,23 @@ import (
 	"log"
 	"os"
 	"testing"
-	//"fmt"
-	"github.com/spf13/afero"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"os/exec"
 )
-
-type MyMockedObject struct {
-	mock.Mock
-}
-
-func (m *MyMockedObject) fileExists() bool {
-	args := m.Called()
-	return args.Bool(0)
-}
-
-func (m *MyMockedObject) nuke() bool {
-	args := m.Called()
-	return args.Bool(0)
-}
 
 type MyMockedNukeObject struct {
 	mock.Mock
-	filepath string
-	dryrun   bool
 }
 
-func (no *MyMockedNukeObject) fileExists() bool {
-	args := no.Called()
+func (m *MyMockedNukeObject) fileExists() bool {
+	args := m.Called()
 	return args.Bool(0)
 }
 
-func (no *MyMockedNukeObject) nuke() bool {
-	args := no.Called()
+func (m *MyMockedNukeObject) nuke() bool {
+	args := m.Called()
 	return args.Bool(0)
-}
-
-func fakeExecCommand(command string, args ...string) *exec.Cmd {
-	cs := []string{"-test.run=TestHelperProcess", "--", command}
-	cs = append(cs, args...)
-	cmd := exec.Command(os.Args[0], cs...)
-	cmd.Env = []string{"GO_WANT_HELPER_PROCESS=1"}
-	return cmd
-}
-
-var mockedExitStatus = 0 // Default to return exit code zero
-
-func TestHelperProcess(t *testing.T) {
-	if os.Getenv("GO_WANT_HELPER_PROCESS") != "1" {
-		return
-	}
-	os.Exit(mockedExitStatus)
 }
 
 func TestMain(m *testing.M) {
@@ -64,12 +29,12 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-func TestPerformNuke(t *testing.T) {
-	testObj := new(MyMockedObject)
+/*func TestPerformNuke(t *testing.T) {
+	testObj := new(MyMockedNukeObject)
 	testObj.On("fileExists").Return(true)
 	testObj.On("nuke").Return(true)
 
-	got := performNuke(testObj)
+	got := run(testObj)
 	want := true
 
 	assert.Equal(t, want, got, "Call should return true")
@@ -179,3 +144,37 @@ func TestNukeSuccess(t *testing.T) {
 // 	want := false
 // 	assert.Equal(t, want, got, fmt.Sprintf("got is %v", got))
 // }
+*/
+
+func Test_run(t *testing.T) {
+	// Setup test files
+	tmpfile, _ := ioutil.TempFile("/tmp", "meh")
+	defer os.Remove(tmpfile.Name())
+
+	testObj := new(MyMockedNukeObject)
+
+	type args struct {
+		nuker nukeObject
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+		errMsg  string
+	}{
+		{name: "FileNotFoundCheck", args: args{}, wantErr: true, errMsg: "File not found"},
+		{name: "FileFound", args: args{nuker: nukeObject{filepath: "/tmp/meh"}}, wantErr: true, errMsg: ""},
+		{name: "NukeSuccess", args: args{nuker: testObj}, wantErr: true, errMsg: ""},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := run(tt.args.nuker)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("run() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			if tt.errMsg != "" {
+				assert.Equal(t, tt.errMsg, err.Error(), "Error msg needs to match")
+			}
+		})
+	}
+}

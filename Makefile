@@ -1,5 +1,6 @@
 DOCKER_LIST=$(shell docker ps -q)
 GOFILES=$(shell find . -type f -name '*.go' -not -path "./vendor/*" -not -path "./.git/*")
+GIT_HASH=$(shell git rev-parse HEAD)
 
 .PHONY: build-image
 build-image:
@@ -31,3 +32,7 @@ format:
 
 test_format:
 	gofmt -s -l $(GOFILES)
+
+push:
+	docker tag go-nuke 304923144821.dkr.ecr.eu-west-2.amazonaws.com/go-nuke:$(GIT_HASH)
+	docker push 304923144821.dkr.ecr.eu-west-2.amazonaws.com/go-nuke:$(GIT_HASH)
