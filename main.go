@@ -38,20 +38,11 @@ func (no nukeObject) nuke() bool {
 
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		fmt.Println(fmt.Sprint(err) + ": " + string(output))
+		log.Println(fmt.Sprint(err) + ": " + string(output))
 		return false
 	}
 	log.Println(string(output))
 	log.Printf("Output was %s", output)
-	return true
-}
-
-func validateDryRun(dryrun string) bool {
-	if dryrun == "false" {
-		log.Printf("DryRun is off, so nuke for real")
-		return false
-	}
-	log.Print("DryRun is on")
 	return true
 }
 
@@ -64,16 +55,18 @@ type MyResponse struct {
 	Message string `json:"Answers"`
 }
 
+var runNukeFunction = runNuke
+
 func HandleLambdaEvent(event MyEvent) (MyResponse, error) {
 	dryrun := validateDryRun(event.DryRun)
 	nuker := nukeObject{filepath: "/configs/" + event.ConfigFilename, dryrun: dryrun}
-	if err := run(nuker); err != nil {
-		os.Exit(1)
+	if err := runNukeFunction(nuker); err != nil {
+		return MyResponse{}, errors.New(fmt.Sprintf("Nuke failed: %s", err.Error()))
 	}
 	return MyResponse{Message: fmt.Sprintf("ConfigFilename is %s and DryRun is %v, the nuke ran", event.ConfigFilename, event.DryRun)}, nil
 }
 
-func run(nuker Nuker) error {
+func runNuke(nuker Nuker) error {
 	if nuker.fileExists() {
 		if nuker.nuke() {
 			return nil
@@ -82,6 +75,15 @@ func run(nuker Nuker) error {
 		}
 	}
 	return errors.New("File not found")
+}
+
+func validateDryRun(dryrun string) bool {
+	if dryrun == "false" {
+		log.Printf("DryRun is off, so nuke for real")
+		return false
+	}
+	log.Print("DryRun is on")
+	return true
 }
 
 func main() {
