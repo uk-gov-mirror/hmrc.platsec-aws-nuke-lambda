@@ -19,4 +19,5 @@ COPY --from=build /aws-nuke-v2.15.0.rc.3-linux-amd64 /usr/local/bin/aws-nuke
 RUN chmod 755 /usr/local/bin/aws-nuke
 RUN mkdir /configs
 COPY *config.yaml /configs
-ENTRYPOINT [ "/main" ] 
+ENTRYPOINT [ "/main" ]
+WORKDIR /

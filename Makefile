@@ -34,5 +34,8 @@ test_format:
 	gofmt -s -l $(GOFILES)
 
 push:
+	# aws ecr get-login-password
+	# docker login -u AWS -p <password> <aws_account_id>.dkr.ecr.<region>.amazonaws.com
+	# aws ecr get-login-password --region eu-west-2 | docker login --username AWS --password-stdin 304923144821.dkr.ecr.eu-west-2.amazonaws.com
 	docker tag go-nuke 304923144821.dkr.ecr.eu-west-2.amazonaws.com/go-nuke:$(GIT_HASH)
 	docker push 304923144821.dkr.ecr.eu-west-2.amazonaws.com/go-nuke:$(GIT_HASH)

@@ -34,6 +34,8 @@ func (no nukeObject) nuke() bool {
 	args := []string{"--quiet", "--force", "--force-sleep", "3", "--config", no.filepath}
 	// args = append(args, "--std=c++11")
 
+	log.Printf("args to nuke are: %v", args)
+
 	cmd := execCommand("aws-nuke", args...)
 
 	output, err := cmd.CombinedOutput()
