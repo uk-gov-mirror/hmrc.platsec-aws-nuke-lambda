@@ -1,60 +1,50 @@
 package main
 
 import (
+	"errors"
 	"fmt"
-	"github.com/aws/aws-lambda-go/lambda"
 	"log"
-	"github.com/spf13/afero"
-        "os"
+	"os"
 	"os/exec"
+
+	"github.com/aws/aws-lambda-go/lambda"
 )
 
-type nukeInterface interface {
-        fileExists()            bool
-        nuke()                  bool
+type Nuker interface {
+	fileExists() bool
+	nuke() bool
 }
-
 type nukeObject struct {
-        filepath        string
-        dryrun          bool
+	filepath string
+	dryrun   bool
 }
 
 func (no nukeObject) fileExists() bool {
-        filesystem := afero.NewOsFs()
-	return fileExistsOnFilesystem(no.filepath, filesystem)
-}
-
-func (no nukeObject) nuke() bool {
-        args := []string{"--quiet", "--force", "--force-sleep", "3", "--config", no.filepath}
-	// args = append(args, "--std=c++11")
-	
-	cmd := exec.Command("aws-nuke", args...)
-
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		fmt.Println(fmt.Sprint(err) + ": " + string(output))
+	if _, err := os.Stat(no.filepath); os.IsNotExist(err) {
+		log.Printf("File %s does not exist", no.filepath)
 		return false
 	}
-	fmt.Println(string(output))
-	fmt.Printf("Output was %s", output)
-        return true
-}
-
-func fileExistsOnFilesystem(filepath string, filesystem afero.Fs) bool {
-	if _, err := filesystem.Stat(filepath); os.IsNotExist(err) {
-                log.Printf("File %s does not exist", filepath)
-		return false
-	}
-        log.Printf("File %s is found", filepath)
+	log.Printf("File %s is found", no.filepath)
 	return true
 }
 
-func validateDryRun(dryrun string) bool {
-	if dryrun == "false" {
-		log.Printf("DryRun is off, so nuke for real")
+var execCommand = exec.Command
+
+func (no nukeObject) nuke() bool {
+	args := []string{"--quiet", "--force", "--force-sleep", "3", "--config", no.filepath}
+	// args = append(args, "--std=c++11")
+
+	log.Printf("args to nuke are: %v", args)
+
+	cmd := execCommand("aws-nuke", args...)
+
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		log.Println(fmt.Sprint(err) + ": " + string(output))
 		return false
 	}
-	log.Print("DryRun is on")
+	log.Println(string(output))
+	log.Printf("Output was %s", output)
 	return true
 }
 
@@ -67,37 +57,37 @@ type MyResponse struct {
 	Message string `json:"Answers"`
 }
 
-func performNuke(ni nukeInterface) bool {
-        if ni.fileExists() {
-                return ni.nuke()
-        }
-	return false
-        	
+var runNukeFunction = runNuke
+
+func HandleLambdaEvent(event MyEvent) (MyResponse, error) {
+	dryrun := validateDryRun(event.DryRun)
+	nuker := nukeObject{filepath: "/configs/" + event.ConfigFilename, dryrun: dryrun}
+	if err := runNukeFunction(nuker); err != nil {
+		return MyResponse{}, errors.New(fmt.Sprintf("Nuke failed: %s", err.Error()))
+	}
+	return MyResponse{Message: fmt.Sprintf("ConfigFilename is %s and DryRun is %v, the nuke ran", event.ConfigFilename, event.DryRun)}, nil
 }
 
-var callPerformNuke = performNuke
-
-func (no *nukeObject) HandleLambdaEvent(event MyEvent) (MyResponse, error) {
-        dryrun := validateDryRun(event.DryRun)
-        no.filepath = "/configs/" + event.ConfigFilename
-        no.dryrun = dryrun
-        //no := nukeObject{filepath: "/configs/" + event.ConfigFilename, dryrun: dryrun}
-        nukeSuccess := "failed"
-	if callPerformNuke(no) { 
-                nukeSuccess = "was successful" 
-        }
-
-        return MyResponse{Message: fmt.Sprintf("ConfigFilename is %s and DryRun is %v, the nuke %s", event.ConfigFilename, event.DryRun, nukeSuccess)}, nil
+func runNuke(nuker Nuker) error {
+	if nuker.fileExists() {
+		if nuker.nuke() {
+			return nil
+		} else {
+			return errors.New("Nuke did not complete")
+		}
+	}
+	return errors.New("File not found")
 }
 
-
+func validateDryRun(dryrun string) bool {
+	if dryrun == "false" {
+		log.Printf("DryRun is off, so nuke for real")
+		return false
+	}
+	log.Print("DryRun is on")
+	return true
+}
 
 func main() {
-
-        no := nukeObject{
-                filepath: "",
-                dryrun: true,
-        }
-
-	lambda.Start(no.HandleLambdaEvent)
+	lambda.Start(HandleLambdaEvent)
 }
