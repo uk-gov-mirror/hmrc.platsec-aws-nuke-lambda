@@ -38,7 +38,7 @@ test_format:
 .PHONY: test_pr_check
 test_pr_check:
 	docker build -f Dockerfile-tests -t go-nuke-test .
-	docker run -it --rm --name go-nuke-test go-nuke-test make test
+	docker run --rm --name go-nuke-test go-nuke-test make test
 
 .PHONY: push
 push:
