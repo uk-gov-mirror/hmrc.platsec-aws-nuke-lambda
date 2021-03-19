@@ -165,6 +165,7 @@ presets:
       ECRRepository:
       - "Repository: deployment_tools"
       - "Repository: platsec-prowler"
+      - "Repository: go-nuke"
       CloudWatchAlarm:
       - "platsec_cloudtrail_monitoring_lambda_failure_alarm"
       - "platsec_guard_duty_monitoring_lambda_failure_alarm"
@@ -243,12 +244,14 @@ presets:
       - "Rule: run_docker_image_weekly"
       - "Rule: run_github_scanner_every_day"
       - "Rule: run_prowler_scanner_every_day"
+      - "Rule: run_go-nuke"
       CloudWatchEventsTarget:
       - "Rule: code_pipeline_failure_notification_via_lambda Target ID: SendToLambda"
       - "Rule: guard_duty_monitoring Target ID: guard_duty_monitoring"
       - "Rule: run_docker_image_weekly Target ID: Vanilla_Docker_Image_CodeBuild_Jobs"
       - "Rule: run_github_scanner_every_day Target ID: github_scanner"
       - "Rule: run_prowler_scanner_every_day Target ID: prowler_runner"
+      - "Rule: run_go-nuke Target ID: go-nuke"
       CloudWatchLogsLogGroup:
       - /aws/codebuild/docker_image
       - /aws/codebuild/terraform-sandbox-automation
@@ -258,6 +261,7 @@ presets:
       - /aws/lambda/prowler_runner
       - /aws/lambda/prowler_scanner
       - /aws/lambda/guard_duty_monitoring
+      - /aws/lambda/go-nuke
       - type: glob
         value: "sns/eu-west-2/*/cloudtrail_platsec_topic"
       IAMRolePolicyAttachment:
