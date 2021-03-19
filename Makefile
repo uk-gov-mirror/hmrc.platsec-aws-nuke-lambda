@@ -11,12 +11,12 @@ clean: build-image
 	docker kill $(DOCKER_LIST)
 	docker rm $(DOCKER_LIST)
 
-.PHONY: run
-test_run:
-	docker run -d -it -v ~/.aws-lambda-rie:/aws-lambda --entrypoint /aws-lambda/aws-lambda-rie  -p 9000:8080 --name go-nuke go-nuke:latest /main
-
 .PHONY: clean-build-run
-clean-build-run: clean test_run
+clean-build-run: clean local_run
+
+.PHONY: local_run
+local_run:
+	docker run -d -it -v ~/.aws-lambda-rie:/aws-lambda --entrypoint /aws-lambda/aws-lambda-rie  -p 9000:8080 --name go-nuke go-nuke:latest /main
 
 .PHONY: test
 test: test_format
@@ -27,12 +27,20 @@ show_test_cover:
 	go test -coverprofile /tmp/cover.out
 	go tool cover -func=/tmp/cover.out
 
+.PHONY: format
 format:
 	gofmt -s -w $(GOFILES)
 
+.PHONY: test_format
 test_format:
 	gofmt -s -l $(GOFILES)
 
+.PHONY: test_pr_check
+test_pr_check:
+	docker build -f Dockerfile-tests -t go-nuke-test .
+	docker run -it --rm --name go-nuke-test go-nuke-test make test
+
+.PHONY: push
 push:
 	# aws ecr get-login-password
 	# docker login -u AWS -p <password> <aws_account_id>.dkr.ecr.<region>.amazonaws.com

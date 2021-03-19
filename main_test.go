@@ -80,8 +80,8 @@ func Test_runNuke(t *testing.T) {
 		wantErr bool
 		errMsg  string
 	}{
-		{name: "FileNotFoundCheck", args: args{nuker: nukeObject{filepath: "dsfasd"}}, wantErr: true, errMsg: "File not found"},
-		{name: "FileFound", args: args{nuker: MockNuke{filepath: "/tmp/meh"}}, wantErr: true, errMsg: "Nuke did not complete"},
+		{name: "FileNotFoundCheck", args: args{nuker: nukeObject{filepath: "dsfasd"}}, wantErr: true, errMsg: "file not found"},
+		{name: "FileFound", args: args{nuker: MockNuke{filepath: "/tmp/meh"}}, wantErr: true, errMsg: "nuke did not complete"},
 		{name: "NukeSuccess", args: args{nuker: MockNukeAllSuccess{}}, wantErr: false, errMsg: ""},
 	}
 	for _, tt := range tests {
@@ -135,6 +135,7 @@ func Test_nukeObject_nuke(t *testing.T) {
 	}{
 		{name: "NukeFailed", fields: fields{filepath: "/blah", dryrun: true}, exitStatus: 1, want: false},
 		{name: "NukeSuccess", fields: fields{filepath: "/blah", dryrun: true}, exitStatus: 0, want: true},
+		{name: "NukeSuccessWithNoDryRun", fields: fields{filepath: "/blah", dryrun: false}, exitStatus: 0, want: true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -180,8 +181,6 @@ func Test_nukeObject_fileExists(t *testing.T) {
 }
 
 func TestHandleLambdaEvent(t *testing.T) {
-	//runNukeFunction = mockRunNuke
-	//mockRunNukeError
 	defer func() { runNukeFunction = runNuke }()
 
 	type args struct {
@@ -195,7 +194,8 @@ func TestHandleLambdaEvent(t *testing.T) {
 		errMsg  string
 	}{
 		{name: "Success", args: args{MyEvent{ConfigFilename: "meh", DryRun: "true"}}, want: MyResponse{Message: "ConfigFilename is meh and DryRun is true, the nuke ran"}, wantErr: false, errMsg: ""},
-		{name: "Failure", args: args{MyEvent{ConfigFilename: "meh", DryRun: "true"}}, want: MyResponse{}, wantErr: true, errMsg: "Nuke failed: Nuke did not complete"},
+		{name: "Failure", args: args{MyEvent{ConfigFilename: "meh", DryRun: "true"}}, want: MyResponse{}, wantErr: true, errMsg: "nuke failed: Nuke did not complete"},
+		{name: "SuccessDryRunOff", args: args{MyEvent{ConfigFilename: "meh", DryRun: "false"}}, want: MyResponse{Message: "ConfigFilename is meh and DryRun is false, the nuke ran"}, wantErr: false, errMsg: ""},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

@@ -32,7 +32,10 @@ var execCommand = exec.Command
 
 func (no nukeObject) nuke() bool {
 	args := []string{"--quiet", "--force", "--force-sleep", "3", "--config", no.filepath}
-	// args = append(args, "--std=c++11")
+
+	if !no.dryrun {
+		args = append(args, "--no-dry-run")
+	}
 
 	log.Printf("args to nuke are: %v", args)
 
@@ -63,7 +66,7 @@ func HandleLambdaEvent(event MyEvent) (MyResponse, error) {
 	dryrun := validateDryRun(event.DryRun)
 	nuker := nukeObject{filepath: "/configs/" + event.ConfigFilename, dryrun: dryrun}
 	if err := runNukeFunction(nuker); err != nil {
-		return MyResponse{}, errors.New(fmt.Sprintf("Nuke failed: %s", err.Error()))
+		return MyResponse{}, fmt.Errorf("nuke failed: %s", err.Error())
 	}
 	return MyResponse{Message: fmt.Sprintf("ConfigFilename is %s and DryRun is %v, the nuke ran", event.ConfigFilename, event.DryRun)}, nil
 }
@@ -73,10 +76,10 @@ func runNuke(nuker Nuker) error {
 		if nuker.nuke() {
 			return nil
 		} else {
-			return errors.New("Nuke did not complete")
+			return errors.New("nuke did not complete")
 		}
 	}
-	return errors.New("File not found")
+	return errors.New("file not found")
 }
 
 func validateDryRun(dryrun string) bool {
