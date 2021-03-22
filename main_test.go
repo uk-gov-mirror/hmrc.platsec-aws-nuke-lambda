@@ -218,3 +218,25 @@ func TestHandleLambdaEvent(t *testing.T) {
 		})
 	}
 }
+
+func Test_nukeCmdArgs(t *testing.T) {
+	type args struct {
+		filepath string
+		dryrun   bool
+	}
+	tests := []struct {
+		name string
+		args args
+		want []string
+	}{
+		{name: "NukeWithDryRun", args: args{filepath: "this_config.yaml", dryrun: true}, want: []string{"--quiet", "--force", "--force-sleep", "3", "--config", "this_config.yaml"}},
+		{name: "NukeNoDryRun", args: args{filepath: "this_config.yaml", dryrun: false}, want: []string{"--quiet", "--force", "--force-sleep", "3", "--config", "this_config.yaml", "--no-dry-run"}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := nukeCmdArgs(tt.args.filepath, tt.args.dryrun); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("nukeCmdArgs() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

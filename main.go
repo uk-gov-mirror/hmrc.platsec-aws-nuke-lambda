@@ -31,11 +31,7 @@ func (no nukeObject) fileExists() bool {
 var execCommand = exec.Command
 
 func (no nukeObject) nuke() bool {
-	args := []string{"--quiet", "--force", "--force-sleep", "3", "--config", no.filepath}
-
-	if !no.dryrun {
-		args = append(args, "--no-dry-run")
-	}
+	args := nukeCmdArgs(no.filepath, no.dryrun)
 
 	log.Printf("args to nuke are: %v", args)
 
@@ -49,6 +45,16 @@ func (no nukeObject) nuke() bool {
 	log.Println(string(output))
 	log.Printf("Output was %s", output)
 	return true
+}
+
+func nukeCmdArgs(filepath string, dryrun bool) []string {
+	args := []string{"--quiet", "--force", "--force-sleep", "3", "--config", filepath}
+
+	if !dryrun {
+		args = append(args, "--no-dry-run")
+	}
+
+	return args
 }
 
 type MyEvent struct {
