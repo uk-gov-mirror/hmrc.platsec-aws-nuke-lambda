@@ -47,6 +47,12 @@ push:
 	# aws ecr get-login-password --region eu-west-2 | docker login --username AWS --password-stdin 304923144821.dkr.ecr.eu-west-2.amazonaws.com
 	docker tag go-nuke 304923144821.dkr.ecr.eu-west-2.amazonaws.com/go-nuke:$(GIT_HASH)
 	docker push 304923144821.dkr.ecr.eu-west-2.amazonaws.com/go-nuke:$(GIT_HASH)
-	docker tag go-nuke 304923144821.dkr.ecr.eu-west-2.amazonaws.com/go-nuke:latest
-	docker push 304923144821.dkr.ecr.eu-west-2.amazonaws.com/go-nuke:latest
+
+.PHONY: push-dev
+push-dev:
+	# aws ecr get-login-password
+	# docker login -u AWS -p <password> <aws_account_id>.dkr.ecr.<region>.amazonaws.com
+	# aws ecr get-login-password --region eu-west-2 | docker login --username AWS --password-stdin 132732819912.dkr.ecr.eu-west-2.amazonaws.com
+	docker tag go-nuke 132732819912.dkr.ecr.eu-west-2.amazonaws.com/go-nuke:$(GIT_HASH)
+	docker push 132732819912.dkr.ecr.eu-west-2.amazonaws.com/go-nuke:$(GIT_HASH)
 	
