@@ -4,6 +4,7 @@ GIT_HASH=$(shell git rev-parse HEAD)
 
 .PHONY: build-image
 build-image:
+	go mod tidy
 	docker build -t go-nuke .
 
 .PHONY: clean

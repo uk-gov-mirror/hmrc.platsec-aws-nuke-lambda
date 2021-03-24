@@ -181,7 +181,9 @@ func Test_nukeObject_fileExists(t *testing.T) {
 }
 
 func TestHandleLambdaEvent(t *testing.T) {
-	defer func() { runNukeFunction = runNuke }()
+	defer func() {
+		runNukeFunction = runNuke
+	}()
 
 	type args struct {
 		event MyEvent
